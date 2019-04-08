@@ -1,0 +1,88 @@
+#!/usr/bin/env python3.5
+
+import tensorflow as tf 
+import numpy as np 
+import cv2 
+import os
+from flask import Flask, request, jsonify
+import base64
+
+
+app=Flask(__name__) #initialize Flask.
+
+#reset tf graph and initialize a session.
+tf.reset_default_graph()
+sess = tf.InteractiveSession()
+
+
+#load the metadata of the model.
+saver = tf.train.import_meta_graph('/opt/ml/data/mnist.ckpt.meta')
+
+
+#restore the model's parameters from the checkpoint file.
+try:
+	saver.restore(sess, '/opt/ml/model/mnist.ckpt')
+	print("Model has been loaded!")
+
+except Exception as e:
+	print(e) #print the exception.
+	print("Model has not been loaded!")
+
+
+graph = tf.get_default_graph()
+
+
+#get the variables that were added earlier during training from the collection.
+logits = graph.get_collection('logits')[0]
+x = graph.get_collection('x')[0]
+
+
+
+#sagemaker's endpoint
+@app.route('/invocations', methods=['POST'])
+def invoke():
+	'''
+	Input : Base64 encoded image.
+	Output: Inference of the model.
+	'''
+
+	imgdata = base64.b64decode(request.data) #decode the base64 encoded image.
+
+	filename = 'inference_image.jpg' 
+
+	#write the image to the current working directory under the name of 'filename'.
+	with open(filename, 'wb') as f:
+		f.write(imgdata) 
+
+	image = cv2.imread(filename, 0) #read the image in grayscale mode.
+ 
+	resized = cv2.resize(image, (784,1)) #the trained MNIST model only accepts a 784-vector. Hence, resize is a must.
+
+	result = sess.run(logits, feed_dict={x:resized}) #infer.
+
+	digit = np.argmax(result) #get the highest probability class.
+
+	#returns a json with the prediction class.
+	return jsonify({
+		"Result" : str(digit)
+		})
+
+
+
+#sagemaker requires this endpoint for healthcheck purpose.
+@app.route('/ping', methods=['GET'])
+def healthcheck():
+	'''
+	Returns a json response with status 200.
+	'''
+	response = {}
+	response['status'] = 200
+	response['message'] = 'OK'
+
+	return jsonify(response)
+
+
+
+#sagemaker requires the webserver to be running on port 8080.
+if __name__ =='__main__':
+	app.run(host='0.0.0.0',debug=False, port=8080)
