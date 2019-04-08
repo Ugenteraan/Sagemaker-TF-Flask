@@ -1,6 +1,6 @@
 #sagemaker
 FROM ubuntu:16.04
-MAINTAINER ugenteraan@ombre.me
+MAINTAINER m.ugenteraan15@gmail.com
 
 RUN apt-get update
 RUN apt-get upgrade -y
