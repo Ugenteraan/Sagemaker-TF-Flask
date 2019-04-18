@@ -6,7 +6,7 @@ import os
 from flask import Flask, request, jsonify
 import base64
 import boto3
-
+import settings
 
 app=Flask(__name__) #initialize Flask.
 
@@ -15,7 +15,7 @@ tf.reset_default_graph()
 sess = tf.InteractiveSession()
 
 
-s3 = boto3.resource('s3', region_name='ap-southeast-1')
+s3 = boto3.resource('s3', region_name='ap-southeast-1', aws_access_key_id=settings.ACCESS_KEY, aws_secret_access_key=settings.SECRET_KEY)
 bucket = s3.Bucket('test-ml-access')
 object_meta = bucket.Object('mnist.ckpt.meta')
 object_ckpt_1 = bucket.Object('mnist.ckpt.index')
