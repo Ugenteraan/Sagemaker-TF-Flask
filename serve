@@ -1,11 +1,11 @@
 #!/usr/bin/env python3.5
-
 import tensorflow as tf 
 import numpy as np 
 import cv2 
 import os
 from flask import Flask, request, jsonify
 import base64
+import boto3
 
 
 app=Flask(__name__) #initialize Flask.
@@ -15,13 +15,35 @@ tf.reset_default_graph()
 sess = tf.InteractiveSession()
 
 
+s3 = boto3.resource('s3', region_name='ap-southeast-1')
+bucket = s3.Bucket('test-ml-access')
+object_meta = bucket.Object('mnist.ckpt.meta')
+object_ckpt_1 = bucket.Object('mnist.ckpt.index')
+object_ckpt_2 = bucket.Object('checkpoint')
+object_ckpt_3 = bucket.Object('mnist.ckpt.data-00000-of-00001')
+
+
+with open('./temp.ckpt.meta', 'wb') as f:
+	object_meta.download_fileobj(f)
+
+with open('./temp.ckpt.index', 'wb') as f:
+	object_ckpt_1.download_fileobj(f)
+
+with open('./checkpoint', 'wb') as f:
+	object_ckpt_2.download_fileobj(f)
+
+with open('./temp.ckpt.data-00000-of-00001', 'wb') as f:
+	object_ckpt_3.download_fileobj(f)
+
+
+
 #load the metadata of the model.
-saver = tf.train.import_meta_graph('/opt/ml/data/mnist.ckpt.meta')
+saver = tf.train.import_meta_graph('./temp.ckpt.meta')
 
 
 #restore the model's parameters from the checkpoint file.
 try:
-	saver.restore(sess, '/opt/ml/model/mnist.ckpt')
+	saver.restore(sess, 'temp.ckpt')
 	print("Model has been loaded!")
 
 except Exception as e:
