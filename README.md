@@ -1,5 +1,5 @@
 # Sagemaker-Tensorflow-Flask
-An example of a trained tensorflow model being deployed in Sagemaker. Flask is used as web framework.
+An example of a trained tensorflow model to be deployed in Sagemaker. Flask is used as web framework.
 
 Steps:
 1. Build the image using the Dockerfile provided. 
